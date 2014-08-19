@@ -44,6 +44,22 @@ void DeleteValidators( Validator *tmp )
 }
 
 /*----------------------------------------------------------------------------*/
+AIORET_TYPE NumberValidators( Validator  *self )
+{
+    if ( !self ) { 
+        return -1;
+    }
+    int count = 0;
+    Validator *cur;
+    for (cur = self; cur->Validate && cur->next ; cur = cur->next, count ++ );
+
+    if ( count == 0 && cur->Validate ) 
+        count ++;
+
+    return count;
+}
+
+/*----------------------------------------------------------------------------*/
 Validator *NewValidator( AIORET_TYPE (*validate_fn)( Validator *obj ) ) 
 {
     Validator *tmp = (Validator*)calloc(sizeof(Validator),1);
@@ -52,6 +68,7 @@ Validator *NewValidator( AIORET_TYPE (*validate_fn)( Validator *obj ) )
     /* tmp->parent = parent; */
     tmp->Validate = validate_fn;
     tmp->ValidateChain = ValidateChain;
+    tmp->NumberValidators = NumberValidators;
     return tmp;
 }
 
@@ -77,28 +94,12 @@ AIORET_TYPE AddValidator( Validator **self, Validator *next )
     return result;
 }
 
-
-AIORET_TYPE NumberValidators( Validator  *self )
-{
-    if ( !self ) { 
-        return -1;
-    }
-    int count = 0;
-    Validator *cur;
-    for (cur = self; cur->Validate && cur->next ; cur = cur->next, count ++ );
-
-    if ( count == 0 && cur->Validate ) 
-        count ++;
-
-    return count;
-}
-
 typedef struct object_that_needs_validation {
-    /* Validator *validator; */
     int x;
     char *y;
 } ObjectWithValidation;
 
+/*----------------------------------------------------------------------------*/
 ObjectWithValidation *NewObjectWithValidation( int xx, const char *yy )
 {
     ObjectWithValidation *tmp = (ObjectWithValidation*)calloc(sizeof(ObjectWithValidation),1);
@@ -109,13 +110,14 @@ ObjectWithValidation *NewObjectWithValidation( int xx, const char *yy )
     /* tmp->validator = NULL; */
 }
 
+/*----------------------------------------------------------------------------*/
 AIORET_TYPE ObjectWithValidationAddValidator( ObjectWithValidation **self, Validator *validator )
 {
     /* AddValidator( self, validator ); */
     printf("something\n");
 }
 
-
+/*----------------------------------------------------------------------------*/
 AIORET_TYPE check_x_value( ObjectWithValidation *obj )
 {
     if ( obj->x < 25 ) { 
@@ -154,6 +156,8 @@ AIORET_TYPE fails_on_the_last( Validator *obj )
 }
 
 
+
+
 TEST(Validate,CoreValidate )
 {
     Validator *top = NULL;
@@ -168,6 +172,8 @@ TEST(Validate,CoreValidate )
     retval = top->ValidateChain( top );
     EXPECT_STREQ("0123456789101112131415161718192021222324252627282930313233343536373839404142434445464748495051525354555657585960616263646566676869707172737475767778798081828384858687888990919293949596979899", buf );
     EXPECT_GE( retval, 0 );
+    EXPECT_EQ(top->NumberValidators(top), 100 );
+
     DeleteValidators( top );
 }
 
@@ -182,6 +188,7 @@ TEST(Validate, ShouldFailValidate )
     for ( int i = 0; i < 101; i ++ ) { 
         AddValidator( &top, NewValidator( fails_on_the_last ));
     }
+    EXPECT_EQ(top->NumberValidators(top), 101 );
     retval = top->ValidateChain( top );
     EXPECT_LE( retval, 0 );
     DeleteValidators( top );
@@ -191,7 +198,7 @@ TEST(Validate, ShouldFailValidate )
 int
 main(int argc, char *argv[] ) 
 {
-   testing::InitGoogleTest(&argc, argv);
+    testing::InitGoogleTest(&argc, argv);
     testing::TestEventListeners & listeners = testing::UnitTest::GetInstance()->listeners();
 #ifdef GTEST_TAP_PRINT_TO_STDOUT
     delete listeners.Release(listeners.default_result_printer());
