@@ -3,17 +3,7 @@
 #include <math.h>
 #include "gtest/gtest.h"
 #include "tap.h"
-
-typedef int AIORET_TYPE;
-
-typedef struct validator {
-    AIORET_TYPE (*Validate)( struct validator *obj );
-    AIORET_TYPE (*ValidateChain)( struct validator *obj );
-    AIORET_TYPE (*AddValidator)( struct validator *self, struct validator *next );
-    AIORET_TYPE (*DeleteValidators)( struct validator *top );
-    AIORET_TYPE (*NumberValidators)( struct validator  *self );
-    struct validator *next;
-} Validator;
+#include "validator.h"
 
 /*----------------------------------------------------------------------------*/
 AIORET_TYPE ValidateChain( Validator *self ) 
@@ -94,77 +84,51 @@ AIORET_TYPE AddValidator( Validator **self, Validator *next )
     return result;
 }
 
-typedef struct object_that_needs_validation {
-    int x;
-    char *y;
-} ObjectWithValidation;
-
-/*----------------------------------------------------------------------------*/
-ObjectWithValidation *NewObjectWithValidation( int xx, const char *yy )
+class ValidateSetup : public ::testing::Test 
 {
-    ObjectWithValidation *tmp = (ObjectWithValidation*)calloc(sizeof(ObjectWithValidation),1);
-    if ( !tmp ) 
-        return tmp;
-    tmp->x = xx;
-    tmp->y = strdup(yy);
-    /* tmp->validator = NULL; */
-}
-
-/*----------------------------------------------------------------------------*/
-AIORET_TYPE ObjectWithValidationAddValidator( ObjectWithValidation **self, Validator *validator )
-{
-    /* AddValidator( self, validator ); */
-    printf("something\n");
-}
-
-/*----------------------------------------------------------------------------*/
-AIORET_TYPE check_x_value( ObjectWithValidation *obj )
-{
-    if ( obj->x < 25 ) { 
-        return 0;
-    } else {
-        return -1;
+ protected:
+    virtual void SetUp() {
+        curvalue = 0;
+        memset(buf,0,BUFSIZE );
+        top = NULL;
+        /* int BUFSIZE = 1024; */
+        /* buf = (char *)malloc(BUFSIZE); */
     }
-}
-
-AIORET_TYPE check_str_value( ObjectWithValidation *obj )
-{
-    if ( strlen(obj->y) < 15 ) {
-        return 0;
-    } else {
-        return -1;
+  
+    virtual void TearDown() { 
     }
-}
+ public:
+    static const int BUFSIZE = 1024;
+    static char buf[BUFSIZE];
+    static int curvalue;
+    Validator *top;
+};
 
-int BUFSIZE = 1024;
-char buf[1024];
-int curvalue;
+int ValidateSetup::curvalue;
+char ValidateSetup::buf[BUFSIZE];
 
 AIORET_TYPE check_test( Validator *obj )
 {
-    sprintf(buf,"%s%d",buf, curvalue );
-    curvalue += 1;
+    sprintf( ValidateSetup::buf,"%s%d", ValidateSetup::buf, ValidateSetup::curvalue );
+    ValidateSetup::curvalue += 1;
 }
 
 AIORET_TYPE fails_on_the_last( Validator *obj )
 {
-    if ( curvalue++ >= 100 ) { 
+    if ( ValidateSetup::curvalue++ >= 100 ) { 
         return -1;
     } else {
         return 0;
     }
 }
 
-
-
-
-TEST(Validate,CoreValidate )
+TEST_F(ValidateSetup,CoreValidate )
 {
-    Validator *top = NULL;
+    /* Validator *top = NULL; */
     Validator *ttmp = NewValidator( check_test );
     AIORET_TYPE retval;
-    memset(buf,0, BUFSIZE );
-    curvalue = 0;
+    /* memset(buf,0, BUFSIZE ); */
+    /* curvalue = 0; */
     AddValidator( &top, ttmp );
     for ( int i = 0; i < 100 ; i ++ ) { 
         AddValidator( &top, NewValidator( check_test ));
@@ -177,13 +141,14 @@ TEST(Validate,CoreValidate )
     DeleteValidators( top );
 }
 
-TEST(Validate, ShouldFailValidate )
+TEST_F(ValidateSetup, ShouldFailValidate )
 {
-    Validator *top = NULL;
+    /* Validator *top = NULL; */
     Validator *ttmp = NewValidator( check_test );
     AIORET_TYPE retval;
-    memset(buf,0, BUFSIZE );
-    curvalue = 0;
+    /* AIORET_TYPE retval; */
+    /* memset(buf,0, BUFSIZE ); */
+    /* curvalue = 0; */
     AddValidator( &top, ttmp );
     for ( int i = 0; i < 101; i ++ ) { 
         AddValidator( &top, NewValidator( fails_on_the_last ));
