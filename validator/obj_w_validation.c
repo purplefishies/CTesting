@@ -2,7 +2,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+
+/*------------------------  HOW TO IMPORT VALIDATION  ------------------------*/
 #include "validator.h"
+
 
 typedef struct object_that_needs_validation {
     VALIDATOR_INTERFACE( struct object_that_needs_validation ); /* All the function defs */
@@ -11,9 +14,10 @@ typedef struct object_that_needs_validation {
     char *y;
 } ObjectWithValidation;
 
-/* VALIDATOR_API(Validator); */
 VALIDATOR_API( ObjectWithValidation );
-/* VALIDATOR_INTERNAL_API( Validator ); */
+
+/*--------------------------  END OF DECLARATION  ---------------------------*/
+
 
 /*----------------------------------------------------------------------------*/
 ObjectWithValidation *NewObjectWithValidation( int xx, const char *yy )
