@@ -1,16 +1,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#include "gtest/gtest.h"
-#include "tap.h"
 #include "validator.h"
+
 
 /*----------------------------------------------------------------------------*/
 AIORET_TYPE ValidateChain( Validator *self ) 
 {
     AIORET_TYPE result = 0;
     for ( Validator *cur = self; cur && cur->next ; cur = cur->next ) {
-        if ( cur->Validate ) {
+        if ( cur->Validate ) {  /* We can ignore blank chains */
             AIORET_TYPE tmpresult = cur->Validate( cur );
             result |= tmpresult;
             if ( result < 0 ) 
@@ -37,11 +36,14 @@ void DeleteValidators( Validator *tmp )
 AIORET_TYPE NumberValidators( Validator  *self )
 {
     if ( !self ) { 
-        return -1;
+        return INVALID_DATA;
     }
     int count = 0;
     Validator *cur;
-    for (cur = self; cur->Validate && cur->next ; cur = cur->next, count ++ );
+    for (cur = self; cur->next ; cur = cur->next) {
+        if ( cur->Validate )
+            count ++;
+    }
 
     if ( count == 0 && cur->Validate ) 
         count ++;
@@ -55,44 +57,47 @@ Validator *NewValidator( AIORET_TYPE (*validate_fn)( Validator *obj ) )
     Validator *tmp = (Validator*)calloc(sizeof(Validator),1);
     if ( !tmp ) 
         return tmp;
-    /* tmp->parent = parent; */
-    tmp->Validate = validate_fn;
-    tmp->ValidateChain = ValidateChain;
-    tmp->NumberValidators = NumberValidators;
+    tmp->Validate          = validate_fn;
+    tmp->ValidateChain     = ValidateChain;
+    tmp->NumberValidators  = NumberValidators;
+    tmp->DeleteValidators  = DeleteValidators;
+    tmp->AddValidator      = AddValidator;
     return tmp;
 }
 
 /*----------------------------------------------------------------------------*/
-AIORET_TYPE AddValidator( Validator **self, Validator *next )
+AIORET_TYPE AddValidator( Validator *self, Validator *next )
 {
-    AIORET_TYPE result = 0;
+    AIORET_TYPE result = SUCCESS;
     if ( !next ) 
-        return -1;
-    if ( !*self )  {
-        *self = next;
-        return result;
+        return INVALID_DATA;
+    if ( !self )  {
+        /* *self = next; */
+        return INVALID_DATA;
     }
     Validator *cur;
-    for ( cur = (*self); cur->Validate && cur->next ; cur = cur->next );
-
-    if ( !cur ) {
-        *self = cur;
-    } else {
-        cur->next = next;
-    }
+    for ( cur = self; cur->next ; cur = cur->next );
+    
+    cur->next = next;
 
     return result;
 }
 
+#ifdef SELF_TEST
+
+#include "gtest/gtest.h"
+#include "tap.h"
+#include "validator.h"
+
+
+/*----------------------------------------------------------------------------*/
 class ValidateSetup : public ::testing::Test 
 {
  protected:
     virtual void SetUp() {
         curvalue = 0;
         memset(buf,0,BUFSIZE );
-        top = NULL;
-        /* int BUFSIZE = 1024; */
-        /* buf = (char *)malloc(BUFSIZE); */
+        top = NewValidator(NULL);
     }
   
     virtual void TearDown() { 
@@ -127,11 +132,9 @@ TEST_F(ValidateSetup,CoreValidate )
     /* Validator *top = NULL; */
     Validator *ttmp = NewValidator( check_test );
     AIORET_TYPE retval;
-    /* memset(buf,0, BUFSIZE ); */
-    /* curvalue = 0; */
-    AddValidator( &top, ttmp );
+    top->AddValidator( top, ttmp );
     for ( int i = 0; i < 100 ; i ++ ) { 
-        AddValidator( &top, NewValidator( check_test ));
+        top->AddValidator( top, NewValidator( check_test ));
     } 
     retval = top->ValidateChain( top );
     EXPECT_STREQ("0123456789101112131415161718192021222324252627282930313233343536373839404142434445464748495051525354555657585960616263646566676869707172737475767778798081828384858687888990919293949596979899", buf );
@@ -146,12 +149,9 @@ TEST_F(ValidateSetup, ShouldFailValidate )
     /* Validator *top = NULL; */
     Validator *ttmp = NewValidator( check_test );
     AIORET_TYPE retval;
-    /* AIORET_TYPE retval; */
-    /* memset(buf,0, BUFSIZE ); */
-    /* curvalue = 0; */
-    AddValidator( &top, ttmp );
+    top->AddValidator( top, ttmp );
     for ( int i = 0; i < 101; i ++ ) { 
-        AddValidator( &top, NewValidator( fails_on_the_last ));
+        top->AddValidator( top, NewValidator( fails_on_the_last ));
     }
     EXPECT_EQ(top->NumberValidators(top), 101 );
     retval = top->ValidateChain( top );
@@ -168,7 +168,10 @@ main(int argc, char *argv[] )
 #ifdef GTEST_TAP_PRINT_TO_STDOUT
     delete listeners.Release(listeners.default_result_printer());
 #endif
-    listeners.Append( new tap::TapListener() );
+    /* listeners.Append( new tap::TapListener() ); */
    
     return RUN_ALL_TESTS();  
 }
+
+
+#endif
