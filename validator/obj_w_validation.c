@@ -11,8 +11,9 @@ typedef struct object_that_needs_validation {
     char *y;
 } ObjectWithValidation;
 
-VALIDATOR_DECLARATIONS( Validator );
-
+/* VALIDATOR_API(Validator); */
+VALIDATOR_API( ObjectWithValidation );
+/* VALIDATOR_INTERNAL_API( Validator ); */
 
 /*----------------------------------------------------------------------------*/
 ObjectWithValidation *NewObjectWithValidation( int xx, const char *yy )
@@ -56,8 +57,8 @@ TEST(ObjectWithValidation,BasicSetup )
 {
     ObjectWithValidation *top = NewObjectWithValidation( 3, "A string" );
     AIORET_TYPE result ;
-    top->AddValidator( top,  NewValidator( (VALIDATOR_FN)check_x_value ) );
-    top->AddValidator( top,  NewValidator( (VALIDATOR_FN)check_str_value ) );
+    top->AddValidator( top,  NewValidator( check_x_value ) );
+    top->AddValidator( top,  NewValidator( check_str_value ) );
     EXPECT_EQ( 2, top->NumberValidators( top ) );
 
     result = top->ValidateChain( top );
@@ -69,22 +70,22 @@ TEST(ObjectWithValidation,ShouldFailValidate )
     ObjectWithValidation *top = NewObjectWithValidation( 244, "A string" );
     AIORET_TYPE result ;
 
-    top->AddValidator( top,  NewValidator( (int (*)(validator*))check_x_value ) );
-    top->AddValidator( top,  NewValidator( (int (*)(validator*))check_str_value ) );
+    top->AddValidator( top,  NewValidator( check_x_value  ) );
+    top->AddValidator( top,  NewValidator( check_str_value ) );
     result = top->ValidateChain( top );
     EXPECT_LE( result , SUCCESS );
     top->DeleteValidators( top );
 
     top = NewObjectWithValidation( 24, "A very very very very very very very very long string" );
-    top->AddValidator( top,  NewValidator( (int (*)(validator*))check_x_value ) );
-    top->AddValidator( top,  NewValidator( (int (*)(validator*))check_str_value ) );
+    top->AddValidator( top,  NewValidator( check_x_value  ) );
+    top->AddValidator( top,  NewValidator( check_str_value  ) );
     result = top->ValidateChain( top );
     EXPECT_LE( result, SUCCESS );
 
     top->DeleteValidators( top );
     top = NewObjectWithValidation( 24, "Exactly 22 characters" );
-    top->AddValidator( top,  NewValidator( (int (*)(validator*))check_x_value ) );
-    top->AddValidator( top,  NewValidator( (int (*)(validator*))check_str_value ) );
+    top->AddValidator( top,  NewValidator( check_x_value  ) );
+    top->AddValidator( top,  NewValidator( check_str_value  ) );
     result = top->ValidateChain( top );
     EXPECT_EQ( result, SUCCESS );
 

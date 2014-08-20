@@ -3,7 +3,7 @@
 #include <math.h>
 #include "validator.h"
 
-VALIDATOR_DECLARATIONS(struct validator);
+VALIDATOR_INTERNAL_API(struct validator);
 
 /*----------------------------------------------------------------------------*/
 AIORET_TYPE ValidateChain( Validator *self ) 
@@ -50,13 +50,26 @@ AIORET_TYPE NumberValidators( Validator  *self )
     return count;
 }
 
-/*----------------------------------------------------------------------------*/
-Validator *NewValidator( AIORET_TYPE (*validate_fn)( Validator *obj ) ) 
+Validator *ExternalNewValidator( AIORET_TYPE (*validate_fn)( Validator *obj ) )
 {
     Validator *tmp = (Validator*)calloc(sizeof(Validator),1);
-    if ( !tmp ) 
+    if ( !tmp )
         return tmp;
-    tmp->Validate          = validate_fn;
+    tmp->Validate          = (VALIDATOR_FN)validate_fn;
+    tmp->ValidateChain     = ValidateChain;
+    tmp->NumberValidators  = NumberValidators;
+    tmp->DeleteValidators  = DeleteValidators;
+    tmp->AddValidator      = AddValidator;
+    return tmp;
+}
+
+/*----------------------------------------------------------------------------*/
+static Validator *NewValidator( AIORET_TYPE (*validate_fn)( Validator *obj ) ) 
+{
+    Validator *tmp = (Validator*)calloc(sizeof(Validator),1);
+    if ( !tmp )
+        return tmp;
+    tmp->Validate          = (VALIDATOR_FN)validate_fn;
     tmp->ValidateChain     = ValidateChain;
     tmp->NumberValidators  = NumberValidators;
     tmp->DeleteValidators  = DeleteValidators;
@@ -128,7 +141,6 @@ AIORET_TYPE fails_on_the_last( Validator *obj )
 
 TEST_F(ValidateSetup,CoreValidate )
 {
-    /* Validator *top = NULL; */
     Validator *ttmp = NewValidator( check_test );
     AIORET_TYPE retval;
     top->AddValidator( top, ttmp );
