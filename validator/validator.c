@@ -63,18 +63,23 @@ Validator *ExternalNewValidator( AIORET_TYPE (*validate_fn)( Validator *obj ) )
     return tmp;
 }
 
-/*----------------------------------------------------------------------------*/
-static Validator *NewValidator( AIORET_TYPE (*validate_fn)( Validator *obj ) ) 
+Validator *SetupValidator( Validator *tmp)
 {
-    Validator *tmp = (Validator*)calloc(sizeof(Validator),1);
     if ( !tmp )
         return tmp;
-    tmp->Validate          = (VALIDATOR_FN)validate_fn;
     tmp->ValidateChain     = ValidateChain;
     tmp->NumberValidators  = NumberValidators;
     tmp->DeleteValidators  = DeleteValidators;
     tmp->AddValidator      = AddValidator;
-    return tmp;
+    return tmp;    
+}
+
+/*----------------------------------------------------------------------------*/
+static Validator *NewValidator( AIORET_TYPE (*validate_fn)( Validator *obj ) ) 
+{
+    Validator *tmp = (Validator*)calloc(sizeof(Validator),1);
+    tmp->Validate  = (VALIDATOR_FN)validate_fn;
+    return SetupValidator( tmp );
 }
 
 /*----------------------------------------------------------------------------*/

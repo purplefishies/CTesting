@@ -12,6 +12,7 @@ typedef int AIORET_TYPE;
 #define VALIDATOR_INTERFACE(T)                                          \
     AIORET_TYPE (*Validate)( T*obj );                                   \
     AIORET_TYPE (*ValidateChain)( T*obj );                              \
+    struct validator *SetupValidator( struct validator *tmp);           \
     AIORET_TYPE (*AddValidator)( T *self, struct validator *next );     \
     void (*DeleteValidators)( T*top );                                  \
     AIORET_TYPE (*NumberValidators)( T *self )                          \
@@ -27,6 +28,7 @@ typedef struct validator {
 #define VALIDATOR_INTERNAL_API(T)                                       \
     AIORET_TYPE ValidateChain( T*self );                                \
     void DeleteValidators( T*tmp );                                     \
+    Validator *SetupValidator( Validator *tmp);                         \
     AIORET_TYPE NumberValidators( T *self );                            \
     static T*NewValidator( AIORET_TYPE (*validate_fn)( T*obj ) );       \
     AIORET_TYPE AddValidator( T*self, Validator*next );                 \
@@ -37,6 +39,7 @@ typedef int (*VALIDATOR_FN)(validator*) ;
 /*----------------  API EXTPORTED TO A CLASS OF TYPE (T)  ------------------*/
 
 #define VALIDATOR_API(T)                                                \
+    Validator *SetupValidator( Validator *tmp);                         \
     AIORET_TYPE ValidateChain( T*self ) {                               \
         self->validator.ValidateChain( &self->validator );              \
     }                                                                   \
@@ -60,7 +63,7 @@ typedef int (*VALIDATOR_FN)(validator*) ;
 
 /*--------------------  REQUIRED CONSTRUCTOR ARGUMENT  ----------------------*/
 
-#define MIXIN_VALIDATOR_ALLOCATOR( tmp, Validator )  memcpy( &tmp->validator, NewValidator(NULL) , sizeof(Validator)); \
+#define MIXIN_VALIDATOR_ALLOCATOR( tmp, Validator )  SetupValidator( &tmp->validator ); \
     tmp->NumberValidators = NumberValidators;\
     tmp->DeleteValidators = DeleteValidators;\
     tmp->ValidateChain = ValidateChain;\

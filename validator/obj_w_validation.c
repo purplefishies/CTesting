@@ -37,6 +37,8 @@ ObjectWithValidation *NewObjectWithValidation( int xx, const char *yy )
 void DeleteObjectWithValidation( ObjectWithValidation *obj )
 {
     obj->DeleteValidators( obj );
+    free(obj->y);
+    free(obj);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -69,12 +71,12 @@ TEST(ObjectWithValidation,BasicSetup )
 {
     ObjectWithValidation *top = NewObjectWithValidation( 3, "A string" );
     AIORET_TYPE result ;
-    Validator *tmp = NewValidator( check_x_value );
-    tmp =  NewValidator( check_str_value );
+    Validator *tmp = NewValidator( check_str_value );
+    /* free(tmp); */
+    /* free(top); */
     top->AddValidator( top, tmp );
     top->AddValidator( top,  NewValidator( check_str_value ) );
     EXPECT_EQ( 2, top->NumberValidators( top ) );
-
     result = top->ValidateChain( top );
     EXPECT_EQ( result , SUCCESS );
     DeleteObjectWithValidation( top );
@@ -89,21 +91,21 @@ TEST(ObjectWithValidation,ShouldFailValidate )
     top->AddValidator( top,  NewValidator( check_str_value ) );
     result = top->ValidateChain( top );
     EXPECT_LE( result , SUCCESS );
-    top->DeleteValidators( top );
+    DeleteObjectWithValidation( top );
 
     top = NewObjectWithValidation( 24, "A very very very very very very very very long string" );
     top->AddValidator( top,  NewValidator( check_x_value  ) );
     top->AddValidator( top,  NewValidator( check_str_value  ) );
     result = top->ValidateChain( top );
     EXPECT_LE( result, SUCCESS );
+    DeleteObjectWithValidation( top );
 
-    top->DeleteValidators( top );
     top = NewObjectWithValidation( 24, "Exactly 22 characters" );
     top->AddValidator( top,  NewValidator( check_x_value  ) );
     top->AddValidator( top,  NewValidator( check_str_value  ) );
     result = top->ValidateChain( top );
     EXPECT_EQ( result, SUCCESS );
-
+    DeleteObjectWithValidation( top );
 }
 
 
