@@ -8,13 +8,14 @@
 
 
 typedef struct object_that_needs_validation {
-    VALIDATOR_INTERFACE( struct object_that_needs_validation ); /* All the function defs */
-    VALIDATOR_MIXIN();                                          /* the actual validator object */
     int x;
     char *y;
+    VALIDATOR_INTERFACE( struct object_that_needs_validation ); /* All the function defs */
+    VALIDATOR_MIXIN();                                          /* the actual validator object */
 } ObjectWithValidation;
 
 VALIDATOR_API( ObjectWithValidation );
+
 
 /*--------------------------  END OF DECLARATION  ---------------------------*/
 
@@ -23,12 +24,19 @@ VALIDATOR_API( ObjectWithValidation );
 ObjectWithValidation *NewObjectWithValidation( int xx, const char *yy )
 {
     ObjectWithValidation *tmp = (ObjectWithValidation*)calloc(sizeof(ObjectWithValidation),1);
+
     MIXIN_VALIDATOR_ALLOCATOR( tmp, Validator );
 
     if ( !tmp ) 
         return tmp;
     tmp->x = xx;
     tmp->y = strdup(yy);
+    return tmp;
+}
+
+void DeleteObjectWithValidation( ObjectWithValidation *obj )
+{
+    obj->DeleteValidators( obj );
 }
 
 /*----------------------------------------------------------------------------*/
@@ -61,12 +69,15 @@ TEST(ObjectWithValidation,BasicSetup )
 {
     ObjectWithValidation *top = NewObjectWithValidation( 3, "A string" );
     AIORET_TYPE result ;
-    top->AddValidator( top,  NewValidator( check_x_value ) );
+    Validator *tmp = NewValidator( check_x_value );
+    tmp =  NewValidator( check_str_value );
+    top->AddValidator( top, tmp );
     top->AddValidator( top,  NewValidator( check_str_value ) );
     EXPECT_EQ( 2, top->NumberValidators( top ) );
 
     result = top->ValidateChain( top );
     EXPECT_EQ( result , SUCCESS );
+    DeleteObjectWithValidation( top );
 }
 
 TEST(ObjectWithValidation,ShouldFailValidate )

@@ -29,27 +29,42 @@ typedef struct validator {
     void DeleteValidators( T*tmp );                                     \
     AIORET_TYPE NumberValidators( T *self );                            \
     static T*NewValidator( AIORET_TYPE (*validate_fn)( T*obj ) );       \
-    AIORET_TYPE AddValidator( T*self, T*next );                         \
+    AIORET_TYPE AddValidator( T*self, Validator*next );                 \
     T*ExternalNewValidator( AIORET_TYPE (*validate_fn)( T*obj ) );
 
 typedef int (*VALIDATOR_FN)(validator*) ;
 
 /*----------------  API EXTPORTED TO A CLASS OF TYPE (T)  ------------------*/
+
 #define VALIDATOR_API(T)                                                \
-    AIORET_TYPE ValidateChain( T*self );                                \
-    void DeleteValidators( T*tmp );                                     \
-    AIORET_TYPE NumberValidators( T *self );                            \
-    Validator*ExternalNewValidator( AIORET_TYPE (*validate_fn)( Validator*obj ) ); \
-    Validator*NewValidator( AIORET_TYPE (*validate_fn)( T*obj ) ) {             \
-        ExternalNewValidator( (VALIDATOR_FN)validate_fn );              \
+    AIORET_TYPE ValidateChain( T*self ) {                               \
+        self->validator.ValidateChain( &self->validator );              \
     }                                                                   \
-    AIORET_TYPE AddValidator( T*self, T*next );                         \
+    void DeleteValidators( T*self ) {                                   \
+        self->validator.DeleteValidators( self->validator.next );      \
+    }                                                                   \
+    AIORET_TYPE NumberValidators( T *self ) {                           \
+        self->validator.NumberValidators( &self->validator );           \
+    }                                                                   \
+    Validator*ExternalNewValidator( AIORET_TYPE (*validate_fn)( Validator*obj ) ); \
+    AIORET_TYPE AddValidator( T*self, Validator*next ) {                        \
+        self->validator.AddValidator( &self->validator, next ); \
+    }                                                                   \
+    Validator*NewValidator( AIORET_TYPE (*validate_fn)( T*obj ) ) {     \
+        return ExternalNewValidator( (VALIDATOR_FN)validate_fn );       \
+    }
+
 
 /*------------  ELEMENT THAT MUST ME INCLUDED IN OTHER OBJECTS  -------------*/
 #define VALIDATOR_MIXIN()   Validator validator;
 
 /*--------------------  REQUIRED CONSTRUCTOR ARGUMENT  ----------------------*/
-#define MIXIN_VALIDATOR_ALLOCATOR( tmp, Validator )  memcpy( tmp, NewValidator(NULL) , sizeof(Validator))
+
+#define MIXIN_VALIDATOR_ALLOCATOR( tmp, Validator )  memcpy( &tmp->validator, NewValidator(NULL) , sizeof(Validator)); \
+    tmp->NumberValidators = NumberValidators;\
+    tmp->DeleteValidators = DeleteValidators;\
+    tmp->ValidateChain = ValidateChain;\
+    tmp->AddValidator = AddValidator;
 
 
 #endif
