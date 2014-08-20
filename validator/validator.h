@@ -14,7 +14,6 @@ typedef int AIORET_TYPE;
     void (*DeleteValidators)( T*top );                                  \
     AIORET_TYPE (*NumberValidators)( T *self )                          \
 
-
 typedef struct validator {
     VALIDATOR_INTERFACE( struct validator );
     struct validator *next;
@@ -30,6 +29,8 @@ typedef struct validator {
 #define VALIDATOR_MIXIN()   Validator validator;
 
 #define MIXIN_VALIDATOR_ALLOCATOR( tmp, Validator )  memcpy( tmp, NewValidator(NULL) , sizeof(Validator))
+
+typedef int (*VALIDATOR_FN)(validator*) ;
 
 
 #endif
