@@ -3,19 +3,21 @@
 #include <math.h>
 #include "validator.h"
 
+VALIDATOR_DECLARATIONS(struct validator);
 
 /*----------------------------------------------------------------------------*/
 AIORET_TYPE ValidateChain( Validator *self ) 
 {
     AIORET_TYPE result = 0;
-    for ( Validator *cur = self; cur && cur->next ; cur = cur->next ) {
+    for ( Validator *cur = self; cur ; cur = cur->next ) {
         if ( cur->Validate ) {  /* We can ignore blank chains */
-            AIORET_TYPE tmpresult = cur->Validate( cur );
+            AIORET_TYPE tmpresult = cur->Validate( self );
             result |= tmpresult;
             if ( result < 0 ) 
                 break;
         }
     }
+
     return result;
 }
 
@@ -40,13 +42,10 @@ AIORET_TYPE NumberValidators( Validator  *self )
     }
     int count = 0;
     Validator *cur;
-    for (cur = self; cur->next ; cur = cur->next) {
+    for (cur = self; cur; cur = cur->next) {
         if ( cur->Validate )
             count ++;
     }
-
-    if ( count == 0 && cur->Validate ) 
-        count ++;
 
     return count;
 }
@@ -133,13 +132,15 @@ TEST_F(ValidateSetup,CoreValidate )
     Validator *ttmp = NewValidator( check_test );
     AIORET_TYPE retval;
     top->AddValidator( top, ttmp );
+    EXPECT_EQ( top->NumberValidators(top), 1 ); /* Start with 1 */
     for ( int i = 0; i < 100 ; i ++ ) { 
-        top->AddValidator( top, NewValidator( check_test ));
+        top->AddValidator( top, NewValidator( check_test )); /* Now add 100 more */
     } 
+    EXPECT_EQ( top->NumberValidators(top), 101 );
+
     retval = top->ValidateChain( top );
-    EXPECT_STREQ("0123456789101112131415161718192021222324252627282930313233343536373839404142434445464748495051525354555657585960616263646566676869707172737475767778798081828384858687888990919293949596979899", buf );
+    EXPECT_STREQ("0123456789101112131415161718192021222324252627282930313233343536373839404142434445464748495051525354555657585960616263646566676869707172737475767778798081828384858687888990919293949596979899100", buf );
     EXPECT_GE( retval, 0 );
-    EXPECT_EQ(top->NumberValidators(top), 100 );
 
     DeleteValidators( top );
 }
@@ -153,7 +154,7 @@ TEST_F(ValidateSetup, ShouldFailValidate )
     for ( int i = 0; i < 101; i ++ ) { 
         top->AddValidator( top, NewValidator( fails_on_the_last ));
     }
-    EXPECT_EQ(top->NumberValidators(top), 101 );
+    EXPECT_EQ(top->NumberValidators(top), 102 );
     retval = top->ValidateChain( top );
     EXPECT_LE( retval, 0 );
     DeleteValidators( top );
