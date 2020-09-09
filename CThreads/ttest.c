@@ -28,7 +28,7 @@ void* trythis(void* arg)
 
 int main(int argc, char *argv[]) 
 { 
-	int i = 0; 
+	int i = 0 ;
 	int error; 
         /* pthread_t tid[5];  */
         pthread_t *tid = NULL;
