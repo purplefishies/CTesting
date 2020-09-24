@@ -33,9 +33,10 @@ typedef struct waiting_control_t
 
 static int test_callback(sd_bus_message *message, void *userdata, sd_bus_error *error)
 {
-    printf("callback called\n");
+
     waiting_control_t *ud = userdata;
     if (ud) {
+        printf("callback called\n");
         ud->found = 1;
         sd_bus_slot_unref(ud->slot);
     }
