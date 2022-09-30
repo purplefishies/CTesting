@@ -20,18 +20,23 @@ else()
     execute_process(
         COMMAND git rev-parse --abbrev-ref HEAD
         OUTPUT_VARIABLE GIT_BRANCH)
+    execute_process(
+        COMMAND git describe --always --dirty
+        OUTPUT_VARIABLE GIT_REVSTRING)
+
 
     string(STRIP "${GIT_REV}" GIT_REV)
     string(SUBSTRING "${GIT_REV}" 1 7 GIT_REV)
     string(STRIP "${GIT_DIFF}" GIT_DIFF)
     string(STRIP "${GIT_TAG}" GIT_TAG)
     string(STRIP "${GIT_BRANCH}" GIT_BRANCH)
+    string(STRIP "${GIT_REVSTRING}" GIT_REVSTRING)
 endif()
 
 set(VERSION "const char* GIT_REV=\"${GIT_REV}${GIT_DIFF}\";
 const char* GIT_TAG=\"${GIT_TAG}\";
 const char* GIT_BRANCH=\"${GIT_BRANCH}\";
-const char* GIT_REVISION=\"${GIT_TAG}-${GIT_REV}${GIT_DIFF}\";"
+const char* GIT_REVISION=\"${GIT_REVSTRING}\";"
 )
 
 if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/version.cpp)

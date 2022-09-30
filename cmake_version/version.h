@@ -6,8 +6,13 @@ extern "C"
     extern const char* GIT_TAG;
     extern const char* GIT_REV;
     extern const char* GIT_BRANCH;
+    extern const char* GIT_REVISION;
 }
 
+const char* libfive_git_full_version(void)
+{
+  return GIT_REVISION;
+}
 const char* libfive_git_version(void)
 {
     return GIT_TAG;
