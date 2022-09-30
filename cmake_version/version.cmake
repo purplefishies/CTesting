@@ -30,7 +30,9 @@ endif()
 
 set(VERSION "const char* GIT_REV=\"${GIT_REV}${GIT_DIFF}\";
 const char* GIT_TAG=\"${GIT_TAG}\";
-const char* GIT_BRANCH=\"${GIT_BRANCH}\";")
+const char* GIT_BRANCH=\"${GIT_BRANCH}\";
+const char* GIT_REVISION=\"${GIT_TAG}-${GIT_REV}${GIT_DIFF}\";"
+)
 
 if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/version.cpp)
     file(READ ${CMAKE_CURRENT_SOURCE_DIR}/version.cpp VERSION_)
